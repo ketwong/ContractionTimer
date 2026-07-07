@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Labor Contraction Timer</title>
+<style>
+    /* Reset and box-sizing for consistent mobile rendering */
+    * { box-sizing: border-box; }
+    
+    body {
+        font-family: system-ui, -apple-system, sans-serif;
+        padding: 15px;
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: #f8f9fa;
+        color: #333;
+        -webkit-font-smoothing: antialiased;
+    }
+    h1 {
+        text-align: center;
+        color: #9d4263;
+        margin-top: 10px;
+    }
+    .card {
+        background: white;
+        padding: 25px 15px;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        margin-bottom: 20px;
+        text-align: center;
+    }
+    
+    /* Timer Button Styles - Mobile Optimized */
+    #timer-button {
+        background-color: #e87fa1;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 160px;
+        height: 160px;
+        font-size: 1.2rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 0 4px 15px rgba(232, 127, 161, 0.4);
+        position: relative;
+        z-index: 10;
+        
+        /* Mobile App Feel Fixes */
+        touch-action: manipulation; /* Removes iOS 300ms tap delay */
+        -webkit-tap-highlight-color: transparent; /* Removes grey flash on tap */
+        -webkit-user-select: none; /* Prevents text highlighting */
+        user-select: none;
+        outline: none;
+    }
+    #timer-button:active {
+        transform: scale(0.95); /* Active press feedback */
+    }
+    #timer-button.active {
+        background-color: #d1567b;
+        box-shadow: 0 4px 10px rgba(209, 86, 123, 0.4);
+    }
+    #current-timer {
+        font-size: 1.5rem;
+        margin-top: 15px;
+        font-variant-numeric: tabular-nums;
+        color: #555;
+        height: 30px;
+    }
+
+    /* Breathing Guide Styles */
+    #breathing-container {
+        display: none; 
+        margin-top: 20px;
+        height: 160px; 
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .breathing-circle {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+    }
+
+    .anim-cleansing {
+        background-color: #a7f3d0; 
+        box-shadow: 0 0 20px rgba(167, 243, 208, 0.6);
+        animation: cleanse 3s ease-in-out forwards;
+    }
+    
+    .anim-structured {
+        background-color: #99f6e4; 
+        box-shadow: 0 0 20px rgba(153, 246, 228, 0.6);
+        animation: breathe 10s infinite cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    #breathing-text {
+        font-weight: bold;
+        color: #0f766e;
+        font-size: 1rem;
+        z-index: 5;
+        padding: 10px;
+        -webkit-user-select: none;
+        user-select: none;
+    }
+    
+    @keyframes cleanse {
+        0% { transform: scale(1); background-color: #a7f3d0; }
+        50% { transform: scale(1.5); background-color: #6ee7b7; }
+        100% { transform: scale(1); background-color: #a7f3d0; }
+    }
+
+    @keyframes breathe {
+        0% { transform: scale(1); background-color: #99f6e4; }
+        40% { transform: scale(1.6); background-color: #5eead4; }
+        100% { transform: scale(1); background-color: #99f6e4; }
+    }
+
+    /* Status and Table Styles */
+    #status-box {
+        font-size: 1rem;
+        padding: 12px;
+        border-radius: 8px;
+        background-color: #e2e8f0;
+        border-left: 5px solid #64748b;
+        margin-top: 20px;
+        display: none;
+        text-align: left;
+        line-height: 1.4;
+    }
+    .status-latent { background-color: #dbeafe; border-left-color: #3b82f6; }
+    .status-regular { background-color: #fef3c7; border-left-color: #f59e0b; }
+    .status-active { background-color: #fee2e2; border-left-color: #ef4444; }
+    
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+        font-size: 0.9rem;
+    }
+    th, td {
+        text-align: left;
+        padding: 12px 4px;
+        border-bottom: 1px solid #edf2f7;
+    }
+    th { color: #718096; font-weight: 600; }
+    .empty-state { text-align: center; color: #a0aec0; padding: 20px; }
+    .header-flex {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .clear-btn {
+        background: none;
+        border: 1px solid #cbd5e1;
+        padding: 8px 12px;
+        border-radius: 5px;
+        color: #64748b;
+        cursor: pointer;
+        font-size: 0.85rem;
+        touch-action: manipulation;
+    }
+</style>
+</head>
+<body>
+
+    <h1>Contraction Timer</h1>
+
+    <div class="card">
+        <button id="timer-button">Start<br>Contraction</button>
+        <div id="current-timer"></div>
+        
+        <div id="breathing-container">
+            <div id="breathing-circle" class="breathing-circle">
+                <span id="breathing-text">Cleansing<br>Breath</span>
+            </div>
+        </div>
+
+        <div id="status-box"></div>
+    </div>
+
+    <div class="card">
+        <div class="header-flex">
+            <h3>History</h3>
+            <button id="clear-btn" class="clear-btn">Clear Data</button>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Duration</th>
+                    <th>Frequency</th>
+                </tr>
+            </thead>
+            <tbody id="history-body">
+                <tr><td colspan="3" class="empty-state">No contractions recorded.</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        let isTiming = false;
+        let currentStartTime = null;
+        let liveTimerInterval = null;
+        let breathingTimeout = null; 
+        let transitionTimeout = null;
+        let endingTimeout = null;
+        let contractions = [];
+
+        const button = document.getElementById('timer-button');
+        const clearBtn = document.getElementById('clear-btn');
+        const timerDisplay = document.getElementById('current-timer');
+        const statusBox = document.getElementById('status-box');
+        const historyBody = document.getElementById('history-body');
+        const breathingContainer = document.getElementById('breathing-container');
+        const breathingCircle = document.getElementById('breathing-circle');
+        const breathingText = document.getElementById('breathing-text');
+
+        // Attach event listeners explicitly for reliable mobile performance
+        button.addEventListener('click', toggleTimer);
+        clearBtn.addEventListener('click', clearHistory);
+
+        function runBreathingCycle() {
+            breathingText.innerText = "Breathe In";
+            breathingTimeout = setTimeout(() => {
+                breathingText.innerText = "Breathe Out";
+                breathingTimeout = setTimeout(runBreathingCycle, 6000); 
+            }, 4000); 
+        }
+
+        function toggleTimer(e) {
+            e.preventDefault(); // Extra safety against phantom double-taps
+            
+            clearTimeout(endingTimeout);
+
+            if (!isTiming) {
+                // START
+                isTiming = true;
+                currentStartTime = new Date();
+                button.classList.add('active');
+                button.innerHTML = "Stop<br>Contraction";
+                
+                breathingContainer.style.display = 'flex';
+                
+                breathingCircle.classList.remove('anim-cleansing', 'anim-structured');
+                void breathingCircle.offsetWidth; 
+                
+                breathingCircle.classList.add('anim-cleansing');
+                breathingText.innerHTML = "Cleansing<br>Breath";
+                
+                transitionTimeout = setTimeout(() => {
+                    breathingCircle.classList.remove('anim-cleansing');
+                    breathingCircle.classList.add('anim-structured');
+                    runBreathingCycle(); 
+                }, 3000);
+                
+                liveTimerInterval = setInterval(() => {
+                    const now = new Date();
+                    const diff = Math.floor((now - currentStartTime) / 1000);
+                    timerDisplay.innerText = formatTime(diff) + " active";
+                }, 1000);
+
+            } else {
+                // STOP
+                isTiming = false;
+                
+                clearInterval(liveTimerInterval);
+                clearTimeout(breathingTimeout); 
+                clearTimeout(transitionTimeout);
+                
+                const endTime = new Date();
+                const durationSec = Math.floor((endTime - currentStartTime) / 1000);
+                
+                button.classList.remove('active');
+                button.innerHTML = "Start<br>Contraction";
+                timerDisplay.innerText = "";
+                
+                breathingCircle.classList.remove('anim-structured', 'anim-cleansing');
+                void breathingCircle.offsetWidth; 
+                breathingCircle.classList.add('anim-cleansing');
+                breathingText.innerHTML = "Cleansing<br>Breath";
+
+                endingTimeout = setTimeout(() => {
+                    breathingContainer.style.display = 'none';
+                    breathingCircle.classList.remove('anim-cleansing');
+                }, 3000);
+
+                let frequencySec = null;
+                if (contractions.length > 0) {
+                    const lastStart = contractions[0].startTimeRaw;
+                    frequencySec = Math.floor((currentStartTime - lastStart) / 1000);
+                }
+
+                contractions.unshift({
+                    startTimeRaw: currentStartTime,
+                    startTimeFormatted: currentStartTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    duration: durationSec,
+                    frequency: frequencySec
+                });
+
+                updateUI();
+            }
+        }
+
+        function updateUI() {
+            historyBody.innerHTML = '';
+            contractions.forEach(c => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${c.startTimeFormatted}</td>
+                    <td>${formatTime(c.duration)}</td>
+                    <td>${c.frequency ? formatTime(c.frequency) : '-'}</td>
+                `;
+                historyBody.appendChild(row);
+            });
+
+            if (contractions.length >= 2) {
+                evaluateLaborStage();
+            } else {
+                statusBox.style.display = 'block';
+                statusBox.className = '';
+                statusBox.innerHTML = "<strong>Keep timing.</strong> Need at least 2 contractions to determine your stage.";
+            }
+        }
+
+        function evaluateLaborStage() {
+            const recent = contractions.slice(0, 3);
+            let totalDuration = 0;
+            let totalFrequency = 0;
+            let validFrequencies = 0;
+
+            recent.forEach(c => {
+                totalDuration += c.duration;
+                if (c.frequency) {
+                    totalFrequency += c.frequency;
+                    validFrequencies++;
+                }
+            });
+
+            const avgDuration = totalDuration / recent.length;
+            const avgFrequency = validFrequencies > 0 ? totalFrequency / validFrequencies : null;
+
+            statusBox.style.display = 'block';
+
+            if (avgDuration >= 50 && avgFrequency <= 150) { 
+                statusBox.className = 'status-active';
+                statusBox.innerHTML = "<strong>Active Stage!</strong> Contractions are 60-90s and close together. Contact your provider.";
+            } else if (avgDuration >= 45 && avgFrequency <= 360) {
+                statusBox.className = 'status-regular';
+                statusBox.innerHTML = "<strong>Early Stage (Progressing):</strong> Contractions are becoming regular. Keep monitoring.";
+            } else {
+                statusBox.className = 'status-latent';
+                statusBox.innerHTML = "<strong>Early Stage (Latent):</strong> Contractions are irregular. Rest and hydrate.";
+            }
+        }
+
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60);
+            const s = seconds % 60;
+            if (m > 0) return `${m}m ${s}s`;
+            return `${s}s`;
+        }
+
+        function clearHistory(e) {
+            e.preventDefault();
+            if(confirm("Are you sure you want to clear your contraction history?")) {
+                contractions = [];
+                isTiming = false;
+                clearInterval(liveTimerInterval);
+                clearTimeout(breathingTimeout);
+                clearTimeout(transitionTimeout);
+                clearTimeout(endingTimeout);
+                
+                button.classList.remove('active');
+                button.innerHTML = "Start<br>Contraction";
+                timerDisplay.innerText = "";
+                breathingContainer.style.display = 'none';
+                statusBox.style.display = 'none';
+                historyBody.innerHTML = '<tr><td colspan="3" class="empty-state">No contractions recorded yet.</td></tr>';
+            }
+        }
+    });
+</script>
+
+</body>
+</html>
